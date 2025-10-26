@@ -165,42 +165,6 @@ bpftool link detach id <LINK_ID>
   libbpf_set_strict_mode(LIBBPF_STRICT_ALL);
   libbpf_set_print(libbpf_print_fn);
   ```
-
----
-
-## Sample App 2 — `apps/hello_uprobe` (user‑space triggered)
-
-A clean, minimal variant: the loader attaches to a symbol (`do_work`) in a small test binary.  
-No kernel noise — it only fires when you run your `trigger` binary.
-
-### Build
-```bash
-cd /workspaces/dev/libbpf-bootstrap/apps/hello_uprobe
-make -j1
-```
-
-### Run
-```bash
-./hello_uprobe --bin ./trigger --symbol do_work
-```
-
-In another terminal:
-```bash
-./trigger
-```
-
-Expected output:
-```
-event: pid=12345 comm=trigger
-event: pid=12345 comm=trigger
-...
-```
-
-Stop with `Ctrl‑C`, or manually:
-```bash
-bpftool link detach id <LINK_ID>
-```
-
 ---
 
 ## Optional: Helper Script
