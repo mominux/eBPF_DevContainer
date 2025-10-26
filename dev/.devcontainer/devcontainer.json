@@ -1,6 +1,7 @@
 {
   "name": "ebpf-dev",
-  "build": { "dockerfile": "Dockerfile" },
+  "image": "ubuntu:22.04",
+  "init": true,
 
   "privileged": true,
   "runArgs": [
@@ -12,6 +13,7 @@
     "--security-opt=seccomp=unconfined",
     "--ulimit", "memlock=-1:-1"
   ],
+
   "mounts": [
     "type=bind,source=/,target=/host,readonly",
     "type=bind,source=/lib/modules,target=/lib/modules,readonly",
@@ -19,15 +21,12 @@
     "type=bind,source=/sys/kernel/tracing,target=/sys/kernel/tracing,readonly",
     "type=tmpfs,target=/sys/fs/bpf"
   ],
+
   "containerEnv": {
     "BLAZESYM_ROOT": "/host"
   },
 
-  "postCreateCommand": [
-    "bash",
-    "-lc",
-    "set -euo pipefail; ROOT=${containerWorkspaceFolder:-$(pwd)}; if [ ! -d \"$ROOT/libbpf-bootstrap\" ]; then git clone --recurse-submodules https://github.com/libbpf/libbpf-bootstrap.git \"$ROOT/libbpf-bootstrap\"; fi; make -C \"$ROOT/libbpf-bootstrap/examples/c\" -j1 minimal profile"
-  ],
+  "postCreateCommand": "bash -lc 'set -euo pipefail; if [ ! -d /workspaces/dev/libbpf-bootstrap ]; then git clone https://github.com/libbpf/libbpf-bootstrap.git /workspaces/dev/libbpf-bootstrap; fi && cd /workspaces/dev/libbpf-bootstrap && git submodule update --init --recursive'",
 
   "customizations": {
     "vscode": {
@@ -37,5 +36,12 @@
         "ms-vscode.cmake-tools"
       ]
     }
-  }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  "remoteUser": "root"
 }
