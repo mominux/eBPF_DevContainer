@@ -1,0 +1,41 @@
+{
+  "name": "ebpf-dev",
+  "build": { "dockerfile": "Dockerfile" },
+
+  "privileged": true,
+  "runArgs": [
+    "--pid=host",
+    "--cap-add=BPF",
+    "--cap-add=PERFMON",
+    "--cap-add=NET_ADMIN",
+    "--cap-add=SYS_ADMIN",
+    "--security-opt=seccomp=unconfined",
+    "--ulimit", "memlock=-1:-1"
+  ],
+  "mounts": [
+    "type=bind,source=/,target=/host,readonly",
+    "type=bind,source=/lib/modules,target=/lib/modules,readonly",
+    "type=bind,source=/sys/kernel/btf,target=/sys/kernel/btf,readonly",
+    "type=bind,source=/sys/kernel/tracing,target=/sys/kernel/tracing,readonly",
+    "type=tmpfs,target=/sys/fs/bpf"
+  ],
+  "containerEnv": {
+    "BLAZESYM_ROOT": "/host"
+  },
+
+  "postCreateCommand": [
+    "bash",
+    "-lc",
+    "set -euo pipefail; ROOT=${containerWorkspaceFolder:-$(pwd)}; if [ ! -d \"$ROOT/libbpf-bootstrap\" ]; then git clone --recurse-submodules https://github.com/libbpf/libbpf-bootstrap.git \"$ROOT/libbpf-bootstrap\"; fi; make -C \"$ROOT/libbpf-bootstrap/examples/c\" -j1 minimal profile"
+  ],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "twxs.cmake",
+        "ms-vscode.cmake-tools"
+      ]
+    }
+  }
+}
