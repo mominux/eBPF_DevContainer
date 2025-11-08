@@ -1,33 +1,25 @@
 {
-  "name": "ebpf-dev",
+  "name": "eBPF DevContainer (Ubuntu 22.04 + libbpf-bootstrap)",
   "build": { "dockerfile": "Dockerfile" },
 
-  "privileged": true,
   "runArgs": [
     "--pid=host",
+    "--privileged",
     "--cap-add=BPF",
     "--cap-add=PERFMON",
     "--cap-add=NET_ADMIN",
     "--cap-add=SYS_ADMIN",
     "--security-opt=seccomp=unconfined",
-    "--ulimit", "memlock=-1:-1"
+    "--ulimit", "memlock=-1:-1",
+    "--mount", "type=bind,source=/,target=/host,readonly",
+    "--mount", "type=bind,source=/lib/modules,target=/lib/modules,readonly",
+    "--mount", "type=bind,source=/sys/kernel/btf,target=/sys/kernel/btf,readonly",
+    "--mount", "type=bind,source=/sys/kernel/tracing,target=/sys/kernel/tracing,readonly",
+    "--mount", "type=bind,source=/sys/kernel/debug,target=/sys/kernel/debug,readonly",
+    "--mount", "type=tmpfs,target=/sys/fs/bpf"
   ],
-  "mounts": [
-    "type=bind,source=/,target=/host,readonly",
-    "type=bind,source=/lib/modules,target=/lib/modules,readonly",
-    "type=bind,source=/sys/kernel/btf,target=/sys/kernel/btf,readonly",
-    "type=bind,source=/sys/kernel/tracing,target=/sys/kernel/tracing,readonly",
-    "type=tmpfs,target=/sys/fs/bpf"
-  ],
-  "containerEnv": {
-    "BLAZESYM_ROOT": "/host"
-  },
 
-  "postCreateCommand": [
-    "bash",
-    "-lc",
-    "set -euo pipefail; ROOT=${containerWorkspaceFolder:-$(pwd)}; if [ ! -d \"$ROOT/libbpf-bootstrap\" ]; then git clone --recurse-submodules https://github.com/libbpf/libbpf-bootstrap.git \"$ROOT/libbpf-bootstrap\"; fi; make -C \"$ROOT/libbpf-bootstrap/examples/c\" -j1 minimal profile"
-  ],
+  "containerEnv": { "BLAZESYM_ROOT": "/host" },
 
   "customizations": {
     "vscode": {
@@ -37,5 +29,8 @@
         "ms-vscode.cmake-tools"
       ]
     }
-  }
+  },
+
+  "postCreateCommand": "bash -lc .devcontainer/post-create.sh",
+  "remoteUser": "root"
 }
