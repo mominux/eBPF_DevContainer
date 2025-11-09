@@ -1,5 +1,25 @@
 # eBPF DevContainer — Ubuntu 22.04 + libbpf-bootstrap + Custom App Example
 
+## Table of Contents
+
+1. [eBPF DevContainer — Ubuntu 22.04 + libbpf-bootstrap + Custom App Example](#ebpf-devcontainer--ubuntu-2204--libbpf-bootstrap--custom-app-example)  
+2. [Why I Moved from BCC to libbpf](#why-i-moved-from-bcc-to-libbpf)  
+3. [Container Overview](#container-overview)  
+4. [How the container is configured](#how-the-container-is-configured)  
+5. [Build dependencies and bootstrap setup](#build-dependencies-and-bootstrap-setup)  
+6. [Getting started](#getting-started)  
+7. [Smoke Tests — Verifying the Environment](#smoke-tests--verifying-the-environment)  
+   - [Test 1 — minimal](#test-1--minimal)  
+   - [Test 2 — profile](#test-2--profile)  
+8. [Practical Sample — apps/hello (Custom uprobe Example)](#practical-sample--appshello-custom-uprobe-example)  
+   - [Step 1 — Understanding the code](#step-1--understanding-the-code)  
+   - [Step 2 — About vmlinuxh](#step-2--about-vmlinuxh)  
+   - [Step 3 — Building our first app](#step-3--building-our-first-app)  
+   - [Step 4 — Running it](#step-4--running-it)  
+9. [bpftool: The microscope for the eBPF world](#bpftool-the-microscope-for-the-ebpf-world)
+
+---
+
 I created this repository as a **personal, reproducible development environment** for exploring **eBPF and libbpf**. It's easy to forget setup details over time, especially with busy schedules, so this serves as a clear roadmap for future reference.
 
 I often worry that installing new tools or modifying my setup might cause issues, which is why I prefer using **Docker containers**. They provide a safe, isolated space for experimentation, keeping my main workflow intact.
@@ -98,10 +118,16 @@ cd eBPF_DevContainer
 
 - (One-time) Ensure the `post-create` script is executable (otherwise the Dev Container will fail with exit code 126):
 ```bash
-chmod +x .devcontainer/post-create.sh
+chmod +x eBPF_DevContainer/dev/.devcontainer/post-create.sh
 ```
 
 - Open the folder in VS Code (with the “Dev Containers” extension installed) → when prompted, choose Reopen in Container.
+
+```bash
+code eBPF_DevContainer/dev/
+```
+or from `view - command pallete` choose `Dev containers: Open Folder In Containers` . 
+
 VS Code will build the image and start the container with the correct privileges and mounts.
 
 - On first start, the post-create hook will:
@@ -122,7 +148,7 @@ Open a new terminal in vscode and continue with **Smoke Tests**.
 Before building custom eBPF applications, it’s a good idea to confirm that the environment, kernel tracing interfaces, and build toolchain all work correctly.
 Two quick smoke tests from **libbpf-bootstrap** help validate this:
 
-**Test 1 — `minimal`**
+## Test 1 — `minimal`
 
 The `minimal` program is a tiny tracepoint example that hooks into the `sys_enter_write` event in the kernel.
 It doesn’t need any special setup and is perfect for checking that:
@@ -158,7 +184,7 @@ minimal-459502  [006] ...21 342085.215577: bpf_trace_printk: BPF triggered from 
 minimal-459502  [006] ...21 342086.215669: bpf_trace_printk: BPF triggered from PID 459502.
 ```
 ---
-**Test 2 — `profile`**
+## Test 2 — `profile`
 
 The `profile` program uses a perf event to sample active user-space and kernel stacks from running processes.
 It’s useful to verify:
@@ -269,7 +295,7 @@ Here’s what it roughly does:
 It’s conceptually similar to `BPF.attach_uprobe()` in BCC, but now we have a fully compiled C program without any Python layer.
 
 ---
-Step 2 — About vmlinux.h
+## Step 2 — About vmlinux.h
 
 The `vmlinux.h` file gives our BPF program access to the **kernel’s internal type definitions** `vmlinux.h` is automatically generated from the kernel’s BTF (BPF Type Format) essentially a self-describing map of all kernel structures and types.
 This means our BPF program knows how the kernel looks internally, without needing kernel source code. So,if a kernel struct changes between versions (for example, a field moves or gets renamed),CO-RE relocation logic inside libbpf adjusts symbol offsets automatically at load time. So our BPF program keeps running across multiple kernel versions without recompiling, as long as both the kernel and our BPF program use BTF information.
@@ -281,7 +307,7 @@ bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
 
 We typically keep that file next to our BPF sources so others can build the example without needing full kernel headers or sources. 
 ---
-Step 3 — Building our first app
+## Step 3 — Building our first app
 
 Since our repo layout follows the `libbpf-bootstrap` structure, we just reuse its build system.
 
@@ -295,7 +321,7 @@ make -j1
 That’s it, this produces both `hello.bpf.o` (the kernel object) and the final executable `hello`.
 
 ---
-Step 4 — Running it
+## Step 4 — Running it
 
 Let’s run it and watch our first custom probe in action:
 
